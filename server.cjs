@@ -49,7 +49,7 @@ const server=http.createServer(async(req,res)=>{
 });
 const timers=[];
 if(background){timers.push(setInterval(()=>{for(const[res,entry]of streams){try{accounts.authorize(entry.req,{roles:['admin','manager']});res.write(': conectado\n\n')}catch{res.end();streams.delete(res)}}},20000));timers.push(setInterval(()=>{try{accounts.people.backup()}catch(e){console.error('Backup da equipe: '+e.message)}},30*60*1000));timers.push(setInterval(()=>fipe.refreshDue().catch(e=>console.error('FIPE: '+e.message)),30*60*1000));timers.push(setTimeout(()=>fipe.refreshDue().catch(e=>console.error('FIPE: '+e.message)),1500));timers.forEach(t=>t.unref())}
-return {server,handler:server.listeners('request')[0],store,accounts,attendance,close(){timers.forEach(clearTimeout);for(const[res]of streams)res.end();attendance.school.close();accounts.close()}};
+return {server,handler:server.listeners('request')[0],store,accounts,attendance,fipe,close(){timers.forEach(clearTimeout);for(const[res]of streams)res.end();attendance.school.close();accounts.close()}};
 }
 module.exports={createApplication};
 if(require.main===module){const app=createApplication(),port=Number(process.env.FROTA_PORT)||4174;app.server.listen(port,'0.0.0.0',()=>{console.log('Nova Alianca - frota, equipe e chamadas. Mantenha esta janela aberta.');console.log(`Local: http://127.0.0.1:${port}`);for(const ips of Object.values(os.networkInterfaces()))for(const ip of ips)if(ip.family==='IPv4'&&!ip.internal)console.log(`LAN: http://${ip.address}:${port}`)})}
