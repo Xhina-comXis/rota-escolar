@@ -16,7 +16,7 @@ function createFipeService({store,directory,broadcast=()=>{},fetchImpl=fetch,now
   const existing=cache.entries[key];if(existing&&Date.parse(existing.expires)>now().getTime())return structuredClone(existing.data);
   if(pending.has(key))return pending.get(key);
   const task=(async()=>{const day=now().toISOString().slice(0,10);if((cache.usage[day]||0)>=450)throw Error('Limite diário de consultas FIPE atingido. Tente amanhã.');cache.usage[day]=(cache.usage[day]||0)+1;
-   const response=await fetchImpl(BASE+relative+(reference?'?reference='+encodeURIComponent(reference):''),{signal:AbortSignal.timeout(12000)});
+   const response=await fetchImpl(BASE+relative+(reference?'?reference='+encodeURIComponent(reference):''),{signal:AbortSignal.timeout(5000)});
    if(!response.ok)throw Error(response.status===429?'O serviço FIPE limitou as consultas. Tente mais tarde.':'Consulta FIPE indisponível ('+response.status+').');
    const data=await response.json();if(data?.error)throw Error('A referência FIPE não foi encontrada.');
    cache.entries[key]={data,expires:new Date(now().getTime()+(relative==='references'?6:24)*3600000).toISOString()};persist();return structuredClone(data);
@@ -35,10 +35,10 @@ function createFipeService({store,directory,broadcast=()=>{},fetchImpl=fetch,now
   const before=store.read().data.vehicles.find(v=>v.id===id);if(!before)throw Error('Veículo não encontrado.');if(before.year&&Number(before.year)!==Number(selection.yearId?.split('-')[0]))throw Error('O ano/modelo da FIPE precisa corresponder ao do veículo.');
   const detail=await quote(selection);return writeVehicle(id,v=>{if(v.year&&Number(v.year)!==detail.modelYear)throw Error('O cadastro foi alterado. Confira o ano/modelo.');v.fipe=detail;v.history.unshift({id:require('node:crypto').randomUUID(),date:now().toISOString().slice(0,10),text:'Referência FIPE vinculada: '+detail.code+' · '+detail.model+' · '+detail.modelYear,system:'fipe-link'})},actorId);
  }
- async function refreshVehicle(id,force=false){const v=store.read().data.vehicles.find(v=>v.id===id);if(!v?.fipe)return;const old=v.fipe,key=selectionKey(old);if(!force&&(old.referenceKey===monthKey(now())||now()-new Date(old.lastAttemptAt||0)<6*3600000))return;
-  try{const detail=await quote(old);writeVehicle(id,current=>{if(selectionKey(current.fipe)===key)current.fipe={...current.fipe,...detail}})}catch(e){writeVehicle(id,current=>{if(selectionKey(current.fipe)===key)current.fipe={...current.fipe,lastAttemptAt:now().toISOString(),lastError:e.message}})}
+ async function refreshVehicle(id,force=false){const v=store.read().data.vehicles.find(v=>v.id===id);if(!v?.fipe)return;const old=v.fipe,key=selectionKey(old);if(!force&&(old.referenceKey===monthKey(now())||now()-new Date(old.lastAttemptAt||0)<6*3600000))return 'skipped';
+  try{const detail=await quote(old);writeVehicle(id,current=>{if(selectionKey(current.fipe)===key)current.fipe={...current.fipe,...detail}});return detail.referenceKey===monthKey(now())?'updated':'pending'}catch(e){writeVehicle(id,current=>{if(selectionKey(current.fipe)===key)current.fipe={...current.fipe,lastAttemptAt:now().toISOString(),lastError:e.message}});return 'failed'}
  }
- async function refreshDue(id,force=false){if(refreshRunning)throw Error('A atualização FIPE já está em andamento.');refreshRunning=true;try{for(const v of store.read().data.vehicles.filter(v=>v.fipe&&(!id||v.id===id))){await refreshVehicle(v.id,force)}return store.read()}finally{refreshRunning=false}}
+ async function refreshDue(id,force=false,{budgetMs=20000}={}){if(refreshRunning)throw Error('A atualização FIPE já está em andamento.');refreshRunning=true;try{const started=Date.now(),result={updated:0,failed:0,pending:0,skipped:0,remaining:0},vehicles=store.read().data.vehicles.filter(v=>v.fipe&&(!id||v.id===id));for(let i=0;i<vehicles.length;i++){if(Date.now()-started>=budgetMs){result.remaining=vehicles.slice(i).filter(v=>force||v.fipe.referenceKey!==monthKey(now())).length;break}const outcome=await refreshVehicle(vehicles[i].id,force);result[outcome||'skipped']++}return {...store.read(),fipeRefresh:result}}finally{refreshRunning=false}}
  function unlink(id,actorId=''){return writeVehicle(id,v=>{if(!v.fipe)return;const old=v.fipe;delete v.fipe;v.history.unshift({id:require('node:crypto').randomUUID(),date:now().toISOString().slice(0,10),text:'Vínculo FIPE removido: '+old.code+' · '+old.model+'.',system:'fipe-unlink'})},actorId)}
  return {catalog:api,quote,link,unlink,refreshDue};
 }

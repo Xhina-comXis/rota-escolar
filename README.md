@@ -24,7 +24,25 @@ Continua sendo controle interno, sem cálculo de folha. Para autorizar a rede da
 
 ## Backups
 
-Cópia privada anterior à primeira alteração de cada dia em nova-alianca/backups. O botão de exportar no app exporta somente a frota. Para recuperação completa, usar o snapshot privado e as ferramentas administrativas do armazenamento. Preservar credenciais fora do código.
+Cópia privada anterior à primeira alteração de cada dia em nova-alianca/backups. Exportar frota / Importar frota tratam somente veículos e seus registros. Em Ajustes, o administrador pode baixar um Backup completo com senha própria do arquivo (AES-256-GCM e scrypt), após confirmar sua senha atual. Inclui frota, contas, horários, ponto, ajustes, chamadas e retificações. Sessões, dispositivos autorizados e códigos de recuperação são removidos da cópia exportada para evitar reativação de acessos antigos.
+
+Na versão online, Restaurar backup completo valida a senha e a integridade do arquivo, exige a senha atual do administrador e a palavra RESTAURAR. Cria uma cópia privada anterior à restauração e substitui o estado compartilhado com gravação condicional. Contas e senhas voltam às existentes no arquivo; todos precisam entrar novamente. Na LAN, a exportação completa funciona; restauração completa deve ser feita com suporte e servidor desligado.
+
+## Recuperação de acesso
+
+O administrador pode gerar seis códigos de uso único em Minha conta → Códigos de recuperação, confirmando sua senha atual. Um arquivo privado é baixado, e os códigos são mostrados uma vez. Guarde-os fora do app. Gerar novamente substitui os anteriores. No login, Esqueci minha senha permite trocar um código válido por uma senha temporária de 24 horas, revogando sessões e exigindo nova senha pessoal. Funcionários continuam podendo pedir redefinição à administração. Sem códigos previamente guardados, o administrador precisa de suporte. Não há recuperação por email configurada.
+
+## Correções operacionais
+
+Chamadas de outro dia ou já concluídas podem ser retificadas somente pelo administrador, informando motivo e situação explícita de cada aluno. Marcas originais, autoria e histórico de retificações são preservados. Criações de viagem têm chave de idempotência. Consultas antigas são descartadas ao trocar de sessão; rascunhos locais são separados por conta.
+
+Em Documentos → Aplicabilidade, é possível confirmar se o item se aplica ao veículo. Não se aplica exige justificativa, suspende apenas aquele aviso e preserva datas anteriores. Nenhuma dispensa é inferida automaticamente.
+
+A consulta FIPE online roda diariamente às 05h de São Paulo para buscar a referência mensal. Falhas preservam o valor anterior, indicam o erro e permitem nova tentativa no dia seguinte. O trabalho automático tem orçamento de tempo para respeitar o limite da função; um lote parcial continua nas execuções seguintes. A referência do mês depende da disponibilidade do serviço externo e do vínculo correto do veículo.
+
+## Validação
+
+Node.js 24: pnpm test executa regressões de sessão, ponto, HTML, idempotência, retificação, recuperação, backup/restore, aplicabilidade, FIPE e envio duplicado. Dados inteiramente fictícios em diretórios temporários. pnpm build gera a interface sem incluir bancos ou credenciais.
 
 ## Origem
 

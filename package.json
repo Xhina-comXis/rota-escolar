@@ -9,6 +9,7 @@
     "@vercel/blob": "^2.4.0"
   },
   "scripts": {
-    "build": "node build.cjs"
+    "build": "node build.cjs",
+    "test": "node tests/run.cjs"
   }
 }

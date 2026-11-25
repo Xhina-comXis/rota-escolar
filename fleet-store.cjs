@@ -10,7 +10,7 @@ function validate(data){
  for(const v of data.vehicles){
   if(!v||typeof v.id!=='string'||!v.id||ids.has(v.id)||!/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(v.plate)||plates.has(v.plate)||typeof v.model!=='string'||!(v.km===null||(Number.isFinite(v.km)&&v.km>=0))||!v.documents||!v.services||!v.equipment||!Array.isArray(v.tires)||!Array.isArray(v.fuel)||!Array.isArray(v.history))throw Error('Cadastro de veículo inválido.');
   ids.add(v.id);plates.add(v.plate);
-  validateOperations(v);
+  validateOperations(v);for(const d of Object.values(v.documents)){if(!d||typeof d!=='object'||(d.applicability!==undefined&&!['applicable','not-applicable','unknown'].includes(d.applicability))||(d.applicability==='not-applicable'&&(typeof d.applicabilityReason!=='string'||d.applicabilityReason.trim().length<5||d.applicabilityReason.length>500)))throw Error('Confira a aplicabilidade e a justificativa dos documentos.');}
   for(const e of v.fuel)if(!e.id||typeof e.date!=='string'||!Number.isFinite(e.km)||!Number.isFinite(e.liters)||e.liters<=0||!Number.isFinite(e.total)||e.total<0||v.km==null||e.km>v.km)throw Error('Abastecimento inválido.');
  }
  const profiles=data.profiles??[];if(!Array.isArray(profiles)||profiles.length>100)throw Error('Lista de perfis inválida.');const profileIds=new Set();

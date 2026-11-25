@@ -3,6 +3,7 @@ const {createStore}=require('./fleet-store.cjs');
 const {createFipeService}=require('./fipe-service.cjs');
 const {createPeopleRoutes}=require('./people-routes.cjs');
 const {createAttendanceRoutes}=require('./attendance.cjs');
+const {createBackupRoutes}=require('./backup.cjs');
 function createApplication({directory=process.env.FROTA_DATA_DIR||path.join(__dirname,'data'),background=true}={}){
 const root=path.join(__dirname,'dist'),port=Number(process.env.FROTA_PORT)||4174;
 const store=createStore(directory);
@@ -12,6 +13,7 @@ function broadcast(){for(const[res,entry]of streams){try{accounts.authorize(entr
 function json(res,status,value){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value))}
 async function readInput(req){const parts=[];let size=0;for await(const part of req){size+=part.length;if(size>10*1024*1024){const e=Error('Arquivo excede 10 MB.');e.status=413;throw e}parts.push(part)}try{return JSON.parse(Buffer.concat(parts).toString('utf8'))}catch{throw Error('Dados inválidos.')}}
 accounts=createPeopleRoutes({directory:directory,store,broadcast,json,readInput});
+const backups=createBackupRoutes({directory,accounts,json,readInput});
 const attendance=createAttendanceRoutes({directory,accounts,json,readInput});
 const server=http.createServer(async(req,res)=>{
  try{
@@ -20,6 +22,7 @@ const server=http.createServer(async(req,res)=>{
    if(req.headers.origin&&req.headers.origin!==`${process.env.VERCEL?'https':'http'}://${req.headers.host}`)return json(res,403,{error:'Origem não autorizada.'});
    if(await accounts.handle(req,res,url))return;
    if(await attendance.handle(req,res,url))return;
+   if(await backups.handle(req,res,url))return;
    const access=accounts.authorize(req,{roles:['admin','manager'],write:!['GET','HEAD'].includes(req.method)});
    if(url.pathname==='/api/fipe/catalog'&&req.method==='GET')return json(res,200,await fipe.catalog(url.searchParams.get('path')||''));
    if(url.pathname==='/api/fipe/quote'&&req.method==='GET')return json(res,200,await fipe.quote(Object.fromEntries(['type','brandId','modelId','yearId'].map(k=>[k,url.searchParams.get(k)||'']))));
@@ -49,7 +52,7 @@ const server=http.createServer(async(req,res)=>{
 });
 const timers=[];
 if(background){timers.push(setInterval(()=>{for(const[res,entry]of streams){try{accounts.authorize(entry.req,{roles:['admin','manager']});res.write(': conectado\n\n')}catch{res.end();streams.delete(res)}}},20000));timers.push(setInterval(()=>{try{accounts.people.backup()}catch(e){console.error('Backup da equipe: '+e.message)}},30*60*1000));timers.push(setInterval(()=>fipe.refreshDue().catch(e=>console.error('FIPE: '+e.message)),30*60*1000));timers.push(setTimeout(()=>fipe.refreshDue().catch(e=>console.error('FIPE: '+e.message)),1500));timers.forEach(t=>t.unref())}
-return {server,handler:server.listeners('request')[0],store,accounts,attendance,fipe,close(){timers.forEach(clearTimeout);for(const[res]of streams)res.end();attendance.school.close();accounts.close()}};
+return {server,handler:server.listeners('request')[0],store,accounts,attendance,fipe,backups,close(){timers.forEach(clearTimeout);for(const[res]of streams)res.end();attendance.school.close();accounts.close()}};
 }
 module.exports={createApplication};
 if(require.main===module){const app=createApplication(),port=Number(process.env.FROTA_PORT)||4174;app.server.listen(port,'0.0.0.0',()=>{console.log('Nova Alianca - frota, equipe e chamadas. Mantenha esta janela aberta.');console.log(`Local: http://127.0.0.1:${port}`);for(const ips of Object.values(os.networkInterfaces()))for(const ip of ips)if(ip.family==='IPv4'&&!ip.internal)console.log(`LAN: http://${ip.address}:${port}`)})}
