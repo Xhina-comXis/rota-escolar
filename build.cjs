@@ -1,0 +1,1 @@
+const fs=require('node:fs'),path=require('node:path');process.chdir(__dirname);fs.mkdirSync('public',{recursive:true});for(const f of fs.readdirSync('dist'))fs.copyFileSync(path.join('dist',f),path.join('public',f));console.log('Interface copiada; dados privados não participam do build.');
