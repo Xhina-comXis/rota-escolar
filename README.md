@@ -49,3 +49,7 @@ Node.js 24: pnpm test executa regressões de sessão, ponto, HTML, idempotência
 Chat de referência: https://chatgpt.com/share/6b071091-b954-83e9-96a5-f8275a8947b7
 
 Protótipo importado do commit 5edc489f1034352a88a25e38ce640130c0f17dcf. A integração substitui localStorage por persistência compartilhada autenticada. O protótipo antigo fica preservado no histórico Git.
+
+## Acesso em aparelho pessoal
+
+Lembrar meu login e manter conectado preserva a sessão por até 30 dias em cookie HttpOnly e guarda somente o login no navegador. Sem a opção, o acesso dura 12 horas. Sair, alterar a senha ou redefinir o acesso revoga as sessões. A senha não é armazenada em localStorage. Mostrar/Ocultar alterna somente a exibição do campo durante o preenchimento.
