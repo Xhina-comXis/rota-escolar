@@ -30,13 +30,16 @@ const server=http.createServer(async(req,res)=>{
     const vehicles=store.read().data.vehicles;
     const vehicle=vehicles.find(v=>v.id===url.searchParams.get('vehicle'));
     if(!vehicle)return json(res,404,{error:'Veículo não encontrado.'});
+    if(process.env.TRACCAR_URL&&process.env.TRACCAR_TOKEN){
+     const result=await fleetTracking([vehicle]);
+     return json(res,200,result.vehicles[0]||{position:null});
+    }
     if(process.env.J16_USB_TOKEN&&ecoSportUsbVehicle(vehicles)?.id===vehicle.id){
      const latest=await readUsbPosition();
      const position=latest?.position||null;
      return json(res,200,{source:'usb',live:!!position&&Date.now()-Date.parse(position.time)<60000,position});
     }
-    const result=await fleetTracking([vehicle]);
-    return json(res,200,result.vehicles[0]||{position:null});
+    return json(res,200,{position:null});
    }
    if(url.pathname==='/api/fipe/catalog'&&req.method==='GET')return json(res,200,await fipe.catalog(url.searchParams.get('path')||''));
    if(url.pathname==='/api/fipe/quote'&&req.method==='GET')return json(res,200,await fipe.quote(Object.fromEntries(['type','brandId','modelId','yearId'].map(k=>[k,url.searchParams.get(k)||'']))));
