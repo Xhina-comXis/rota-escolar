@@ -1,4 +1,5 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {ecoSportUsbVehicle,readUsbPosition}=require('./j16-usb.cjs');
 const {fleetTracking}=require('./tracking.cjs');
 const {createStore}=require('./fleet-store.cjs');
 const {createFipeService}=require('./fipe-service.cjs');
@@ -25,7 +26,18 @@ const server=http.createServer(async(req,res)=>{
    if(await attendance.handle(req,res,url))return;
    if(await backups.handle(req,res,url))return;
    const access=accounts.authorize(req,{roles:['admin','manager'],write:!['GET','HEAD'].includes(req.method)});
-   if(url.pathname==='/api/tracking'&&req.method==='GET')return json(res,200,await fleetTracking(store.read().data.vehicles));
+   if(url.pathname==='/api/tracking'&&req.method==='GET'){
+    const vehicles=store.read().data.vehicles;
+    const vehicle=vehicles.find(v=>v.id===url.searchParams.get('vehicle'));
+    if(!vehicle)return json(res,404,{error:'Veículo não encontrado.'});
+    if(process.env.J16_USB_TOKEN&&ecoSportUsbVehicle(vehicles)?.id===vehicle.id){
+     const latest=await readUsbPosition();
+     const position=latest?.position||null;
+     return json(res,200,{source:'usb',live:!!position&&Date.now()-Date.parse(position.time)<60000,position});
+    }
+    const result=await fleetTracking([vehicle]);
+    return json(res,200,result.vehicles[0]||{position:null});
+   }
    if(url.pathname==='/api/fipe/catalog'&&req.method==='GET')return json(res,200,await fipe.catalog(url.searchParams.get('path')||''));
    if(url.pathname==='/api/fipe/quote'&&req.method==='GET')return json(res,200,await fipe.quote(Object.fromEntries(['type','brandId','modelId','yearId'].map(k=>[k,url.searchParams.get(k)||'']))));
    if(url.pathname.startsWith('/api/fipe/')&&req.method==='POST'){
