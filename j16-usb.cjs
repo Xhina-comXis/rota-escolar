@@ -46,7 +46,7 @@ async function ingestUsb(req, res) {
   const {latitude,longitude,speed,time} = input || {};
   const timestamp = typeof time === 'string' ? Date.parse(time) : NaN;
   const now = Date.now();
-  if (!Number.isFinite(timestamp) || timestamp < now - 120000 || timestamp > now + 15000 ||
+  if (!Number.isFinite(timestamp) || timestamp < now - 7 * 24 * 60 * 60 * 1000 || timestamp > now + 15000 ||
       !Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
       !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
       (speed !== null && (!Number.isFinite(speed) || speed < 0 || speed > 600))) return reply(422);
