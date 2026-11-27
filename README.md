@@ -53,3 +53,17 @@ Protótipo importado do commit 5edc489f1034352a88a25e38ce640130c0f17dcf. A integ
 ## Acesso em aparelho pessoal
 
 Lembrar meu login e manter conectado preserva a sessão por até 30 dias em cookie HttpOnly e guarda somente o login no navegador. Sem a opção, o acesso dura 12 horas. Sair, alterar a senha ou redefinir o acesso revoga as sessões. A senha não é armazenada em localStorage. Mostrar/Ocultar alterna somente a exibição do campo durante o preenchimento.
+
+## Rotina e uso no celular
+
+A entrada autenticada abre Hoje, com viagens da conta e próprio ponto; administradores também consultam jornadas a conferir e prioridades da frota. No celular, Hoje, Frota e Chamadas ficam na navegação principal e as demais áreas em Mais. Funcionários mantêm apenas as áreas autorizadas.
+
+Cadastro a conferir fica separado de prazo próximo e urgência. Na chamada, a barra de progresso e conclusão é persistente, com busca e filtro de alunos sem confirmação. Os relatórios de jornada usam dias expansíveis no celular.
+
+Listas de alunos podem ser guardadas e reutilizadas; Criar volta reaproveita os dados da ida. Atualizar uma lista não altera viagens existentes nem snapshots de chamadas iniciadas. Histórico aceita período de até 93 dias, escola/linha e responsável, com exportação CSV e alterações identificadas.
+
+Formulários elegíveis mantêm rascunho de 24 horas nesta aba e na conta que o criou; senha, arquivo, recuperação e formulários de ações sensíveis não entram nesse mecanismo. Fechar um formulário modificado oferece guardar, continuar ou descartar.
+
+Durante uma chamada já aberta, marcações com conexão perdida ficam pendentes nesta aba, sem nomes na fila local e com identificadores idempotentes. Quando volta a conexão, o app tenta confirmar. Conflito fica visível e não sobrescreve outra marcação. É necessário manter a aba; isso não equivale a um aplicativo inteiramente offline. Ponto continua exigindo resposta do servidor.
+
+A atualização da frota usa 30 segundos durante uso, 90 quando ociosa e recuo após falhas; a verificação periódica da sessão passa a 60 segundos. Não houve migração de banco relacional nem alteração de quem consulta histórico após reatribuir uma linha.

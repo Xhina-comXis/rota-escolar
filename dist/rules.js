@@ -25,5 +25,5 @@ function vehicleAlerts(v,today=dateOnly()){
  for(const [name,status] of Object.entries(v.equipment)){if(status==='bad')push(name,'red','Problema identificado','equipment');else if(v.checked&&(status==='no'||status==='unknown'))push(name,'pending',status==='no'?'Não possui • conferir necessidade':'Funcionamento não conferido','equipment')}
  if(!v.checked)push('Checklist de equipamentos','pending','Conferência ainda não registrada','equipment');return a;
 }
-function vehicleStatus(v){const a=vehicleAlerts(v);return a.some(x=>x.level==='red')?'red':a.some(x=>x.level==='yellow'||x.level==='pending')?'yellow':'green'}
+function vehicleStatus(v){const a=vehicleAlerts(v);return a.some(x=>x.level==='red')?'red':a.some(x=>x.level==='yellow')?'yellow':a.some(x=>x.level==='pending')?'pending':'green'}
 if(typeof module!=='undefined')module.exports={RULES,dateOnly,addDate,daysUntil,fuelMetrics,vehicleAlerts,vehicleStatus};
